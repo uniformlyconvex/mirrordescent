@@ -5,6 +5,8 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
+from mirrordescent.utils import rd_to_rdp1
+
 class MirrorMap(abc.ABC):
     """
     Abstract base class for mirror maps (in case we want to consider other mirror maps).
@@ -42,14 +44,24 @@ class EntropicMirrorMap(MirrorMap):
     """
     The entropic mirror map; see eqn. (3.4) in "Mirrored Langevin Dynamics".
     """
+    @staticmethod
+    def _sum_x_log_x(x: torch.Tensor) -> torch.Tensor:
+        # Sum xlogx with the convention that 0log0 = 0
+        return torch.sum(
+            torch.where(
+                x > 0,
+                x * torch.log(x),
+                0
+            )
+        )
+
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        def _sum_x_log_x(arr: torch.tensor) -> torch.tensor:
-            # Sum xlogx with the convention that 0log0 = 0 
-            return torch.sum(torch.where(arr > 0, arr * torch.log(arr), 0))
-        
-        first_term = _sum_x_log_x(x)
-        second_term = _sum_x_log_x(torch.tensor([1-torch.sum(x)]))
-        return first_term + second_term
+        """
+        Apply the entropic mirror map to x.
+        """
+        # x is such that sum_i x_i <= 1, so we need to append 1 - sum_i x_i to x
+        x = rd_to_rdp1(x)
+        return self._sum_x_log_x(x)
     
     @staticmethod
     def fenchel_dual(y: torch.Tensor) -> torch.Tensor:

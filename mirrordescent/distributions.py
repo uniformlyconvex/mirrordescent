@@ -1,36 +1,53 @@
-import typing as t
-from functools import cached_property
+from __future__ import annotations
+
+import abc
 
 import torch
+import torch.distributions as dist
 
-from mirrordescent.utils import gamma
+from mirrordescent.utils import rd_to_rdp1
 
-class DirichletPosterior:
-    def __init__(
-        self,
-        alphas: torch.Tensor,
-        observations: torch.Tensor
-    ):
-        self._alphas = alphas
-        self._observations = observations
 
-    @cached_property
-    def _normalising_constant(self) -> torch.Tensor:
-        numerator = torch.prod(gamma(self._alphas + self._observations))
-        denominator = gamma(torch.sum(self._alphas + self._observations))
-        return numerator / denominator
+class BaseDistribution(dist.Distribution, abc.ABC):
+    @abc.abstractmethod
+    def V(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        The potential energy function.
+        """
+    
+    def grad_V(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.autograd.functional.jacobian(self.V, x)
+    
+    @property
+    @abc.abstractmethod
+    def dim(self) -> int:
+        """
+        The dimension of the distribution.
+        """
 
-    def density(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[0] != self._alphas.shape[0] - 1:
-            raise ValueError("x must have the same dimension as alphas - 1")
-
-        x = torch.cat([x, 1 - torch.sum(x)])
-
-        if any(x < 0):
-            return torch.tensor(0.0)
-        
-        pows = x ** (self._observations + self._alphas - 1) # element-wise power
-        return torch.prod(pows) / self._normalising_constant
+class DirichletPosterior(BaseDistribution, dist.Dirichlet):
+    def add_observations(self, observations: torch.Tensor) -> DirichletPosterior:
+        """
+        Return the resulting Dirichlet posterior after adding observations.
+        """
+        if observations.shape != self.concentration.shape:
+            raise ValueError(
+                f"""
+                Observations must have the same shape as the concentration
+                (expected {self.concentration.shape}, got {observations.shape})
+                """
+            )
+        return DirichletPosterior(
+            concentration=self.concentration + observations,
+            validate_args=self._validate_args
+        )
 
     def V(self, x: torch.Tensor) -> torch.Tensor:
-        return -torch.log(self.density(x))
+        x = rd_to_rdp1(x)
+        x = x / torch.sum(x)
+        x = torch.clamp(x, min=1e-6, max=1 - 1e-6)
+        return -self.log_prob(x)
+    
+    @property
+    def dim(self) -> int:
+        return self.concentration.shape[0]
