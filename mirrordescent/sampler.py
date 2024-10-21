@@ -55,7 +55,6 @@ class MLD:
         return iterates[-1]
 
     def get_samples(self, no_samples: int) -> list[torch.Tensor]:
-        sample = self._sample_once(0)
         ctx = mp.get_context("spawn")
         with ctx.Pool() as pool:
             samples = pool.map(self._sample_once, range(no_samples))
