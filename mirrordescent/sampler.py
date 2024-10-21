@@ -51,7 +51,7 @@ class MLD:
             iterates.append(x_tp1)
             mirror_iterates.append(y_tp1)
         
-        print(f'Iteration {i} done')
+        print(f'Got sample {i}')
         return iterates[-1]
 
     def get_samples(self, no_samples: int) -> list[torch.Tensor]:
