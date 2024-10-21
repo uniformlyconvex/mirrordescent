@@ -5,7 +5,6 @@ import torch
 
 from mirrordescent.distributions import BaseDistribution
 from mirrordescent.mirror_maps import MirrorMap
-from mirrordescent.utils import rd_to_rdp1
 
 class MLD:
     def __init__(
