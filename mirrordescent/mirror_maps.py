@@ -1,8 +1,5 @@
 import abc
-import typing as t
 
-import numpy as np
-import numpy.typing as npt
 import torch
 
 from mirrordescent.utils import rd_to_rdp1
