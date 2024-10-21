@@ -4,6 +4,9 @@ import numpy as np
 import torch
 
 def plot_dist(dist: torch.distributions.distribution, samples: list[torch.Tensor]) -> go.Figure:
+    """
+    Makes a contour plot of the distribution and scatters the samples.
+    """
     x1s = torch.linspace(0, 1, 100)
     x2s = torch.linspace(0, 1, 100)
     
