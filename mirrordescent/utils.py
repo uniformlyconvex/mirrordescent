@@ -7,8 +7,8 @@ def disable_warnings():
 
 def rd_to_rdp1(x: torch.Tensor) -> torch.Tensor:
     """
-    Pad the d-dimensional input x, such that sum_i x_i <=1, to d dimensions such
-    that sum_i x_i = 1.
+    Pad the d-dimensional input x, such that sum_{i=1}^d x_i <=1, to d+1 dimensions
+    such that sum_{i=1}^{d+1} x_i = 1.
     """
     if not x.shape:  # x is a scalar
         return torch.cat(
