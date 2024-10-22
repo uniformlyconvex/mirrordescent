@@ -49,13 +49,14 @@ class MLD:
             x_tp1 = self._mirror_map.grad_fenchel_dual(y_tp1)
             iterates.append(x_tp1)
             mirror_iterates.append(y_tp1)
-        
-        print(f'Got sample {i}')
+
         return iterates[-1]
 
     def get_samples(self, no_samples: int) -> list[torch.Tensor]:
         ctx = mp.get_context("spawn")
-        with ctx.Pool() as pool:
+        no_processors = mp.cpu_count()
+        # Use all but one processor to sample, to avoid making the machine unresponsive
+        with ctx.Pool(no_processors-1) as pool:
             samples = pool.map(self._sample_once, range(no_samples))
         
         return samples
