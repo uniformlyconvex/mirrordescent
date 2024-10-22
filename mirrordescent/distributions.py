@@ -44,8 +44,10 @@ class DirichletPosterior(BaseDistribution, dist.Dirichlet):
 
     def V(self, x: torch.Tensor) -> torch.Tensor:
         x = rd_to_rdp1(x)
+        # Please for god's sake just accept this normalisation
         x = x / torch.sum(x)
         x = torch.clamp(x, min=1e-6, max=1 - 1e-6)
+        x = x / torch.sum(x)
         return -self.log_prob(x)
     
     @property

@@ -51,16 +51,28 @@ class DimensionExperiment(Experiment):
         return end_time - start_time
 
     def run(self) -> dict[int, list[float]]:
-        results: dict[int, list[float]] = {}
-        for dim in self.DIMS:
-            results[dim] = []
-            for run in range(1, self.RUNS+1):
-                print(f'Starting run {run} for dimension {dim}')
-                time_taken = self._run_single(dim)
-                print(f'\tCompleted in {time_taken:.2f} seconds')
-                results[dim].append(time_taken)
-        with open(self.RESULTS_FILE, 'w') as f:
-            json.dump(results, f)
+        try:
+            with open(self.RESULTS_FILE, 'r') as f:
+                results: dict[int, list[float]] = json.load(f)
+        except FileNotFoundError:
+            result: dict[int, list[float]] = {}
+
+        try:
+            for dim in self.DIMS:
+                results[dim] = results.get(dim, [])
+                completed_runs = len(results[dim])
+                if completed_runs == self.RUNS:
+                    continue
+                
+                for run in range(completed_runs, self.RUNS+1):
+                    print(f'Starting run {run} for dimension {dim}')
+                    time_taken = self._run_single(dim)
+                    print(f'\tCompleted in {time_taken:.2f} seconds')
+                    results[dim].append(time_taken)
+        except Exception:
+            with open(self.RESULTS_FILE, 'w') as f:
+                json.dump(results, f)
+            raise
         
         return results
     
