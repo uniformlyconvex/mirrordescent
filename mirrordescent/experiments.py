@@ -23,7 +23,7 @@ class ExperimentRegistry:
 
 
 class DimensionExperiment(Experiment):
-    DIMS = [2, 3, 4, 5, 8, 10, 15, 20]
+    DIMS = [2, 4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 96, 128]
     RUNS = 10
     NO_SAMPLES = 100
 
@@ -55,16 +55,20 @@ class DimensionExperiment(Experiment):
             with open(self.RESULTS_FILE, 'r') as f:
                 results: dict[int, list[float]] = json.load(f)
         except FileNotFoundError:
-            result: dict[int, list[float]] = {}
+            results: dict[int, list[float]] = {}
+
+        # For some godforsaken reason, the keys are all strings
+        results = {int(k): v for k, v in results.items()}
 
         try:
             for dim in self.DIMS:
                 results[dim] = results.get(dim, [])
                 completed_runs = len(results[dim])
+                print(f'Completed runs for dimension {dim}: {completed_runs}')
                 if completed_runs == self.RUNS:
                     continue
                 
-                for run in range(completed_runs, self.RUNS+1):
+                for run in range(completed_runs+1, self.RUNS+1):
                     print(f'Starting run {run} for dimension {dim}')
                     time_taken = self._run_single(dim)
                     print(f'\tCompleted in {time_taken:.2f} seconds')
@@ -73,6 +77,9 @@ class DimensionExperiment(Experiment):
             with open(self.RESULTS_FILE, 'w') as f:
                 json.dump(results, f)
             raise
+        finally:
+            with open(self.RESULTS_FILE, 'w') as f:
+                json.dump(results, f)
         
         return results
     
