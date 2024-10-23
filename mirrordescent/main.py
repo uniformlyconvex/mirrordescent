@@ -9,7 +9,8 @@ import mirrordescent.utils as utils
 def step_sizes(t):
         return t ** -1
 
-if __name__ == '__main__':
+
+def demo_sampling():
     dist = dists.DirichletPosterior(
         concentration=torch.tensor([2.0, 4.0, 4.0])
     )
@@ -25,3 +26,7 @@ if __name__ == '__main__':
 
     fig = plotting.plot_dist(dist, samples)
     fig.show()
+    
+
+if __name__ == '__main__':
+    plotting.plot_dimension_experiment()

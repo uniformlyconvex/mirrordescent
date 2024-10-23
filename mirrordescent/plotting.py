@@ -1,7 +1,11 @@
+import json
+
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import numpy as np
 import torch
+
+import mirrordescent.experiments as exp
 
 def plot_dist(dist: torch.distributions.distribution, samples: list[torch.Tensor]) -> go.Figure:
     """
@@ -62,3 +66,70 @@ def plot_dist(dist: torch.distributions.distribution, samples: list[torch.Tensor
     )
 
     return fig
+
+
+def plot_dimension_experiment() -> None:
+    NO_STDS = 2.0
+    def color(opacity: float) -> str:
+        return f'rgba(0, 100, 250, {opacity})'
+
+    filename = exp.DimensionExperiment.RESULTS_FILE
+
+    with open(filename, 'r') as f:
+        results: dict[str, list[float]] = json.load(f)
+
+    results: dict[int, list[float]] = {int(k): v for k, v in results.items()}
+    results = {k: v for k, v in sorted(results.items())}
+    results.pop(2, None)
+
+    dims = list(results.keys())
+    mean = [np.mean(results[dim]) for dim in dims]
+    upper_std = [np.mean(results[dim]) + NO_STDS * np.std(results[dim]) for dim in dims]
+    lower_std = [np.mean(results[dim]) - NO_STDS * np.std(results[dim]) for dim in dims]
+
+    mean_trace = go.Scatter(
+        x=dims,
+        y=mean,
+        mode='lines',
+        name='Mean',
+        line=dict(color=color(1.0))
+    )
+    upper_std_trace = go.Scatter(
+        x=dims,
+        y=upper_std,
+        mode='lines',
+        name='Mean + 2 std',
+        line=dict(color=color(1.0), dash='dash')
+    )
+    lower_std_trace = go.Scatter(
+        x=dims,
+        y=lower_std,
+        mode='lines',
+        name='Mean - 2 std',
+        fill='tonexty',
+        fillcolor=color(0.2),
+        line=dict(color=color(1.0), dash='dash')
+    )
+
+    fig = go.Figure(
+        data=[mean_trace, upper_std_trace, lower_std_trace],
+        layout=go.Layout(
+            title='Time taken to sample from Dirichlet posterior',
+            xaxis={'title': 'Dimension'},
+            yaxis={'title': 'Time taken (s)'},
+        )
+    )
+
+    fig.update_layout(
+        xaxis_title=dict(font=dict(size=20)),
+        yaxis_title=dict(font=dict(size=20)),
+        xaxis=dict(tickfont=dict(size=18)),
+        yaxis=dict(tickfont=dict(size=18)),
+        legend=dict(font=dict(size=18)),
+    )
+
+    fig.show()
+
+
+if __name__ == '__main__':
+    plot_dimension_experiment()
